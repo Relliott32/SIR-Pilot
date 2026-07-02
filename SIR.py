@@ -1,35 +1,34 @@
-
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import odeint
 
-def derive(I, t, beta, z, eta, mu, v, gamma):
+def derive(I, t, beta, z, eta, mu, muD, v, gamma):
     U = I[0]
     R = I[1]
     C = I[2]
     return [
-        (-beta*U)-(eta*U)-(mu*U) - (z*U) + (gamma*U), #U
-        (beta*U) - (eta*R)-(mu*R) - (v*R), #R
-        (v*C)+(z*U)-(mu*C), #C
+        (-beta*U)-(eta*U)-(mu*U) -(muD*U)- (z*U) + (gamma), #U
+        (beta*U) - (eta*R)-(mu*R) - (muD*R) - (v*R), #R
+        (v*R)+(z*U), #C
     ]
 
 #parameter list
-beta = .15 #rate referal into R
-z = 1/7 #rate of awarness
-mu = 0.05 # natural death rate
-muD = 0.18 #death rate related to behavioral issues
-eta = 0.01 #crisis rate
-v = 1/7 #rate of connection
-gamma = .15 #new cases per day
+beta = .1147 #rate referal into R
+z = 1/10 #rate of awareness
+mu = 0.005834 # natural death rate
+muD = 0.00000239 #death rate related to behavioral issues
+eta = 0.0094 #crisis rate
+v = 0.009 #rate of connection
+gamma = 756 #new cases per day
 # total pop in country
 
-N = 10000 #total pop (uppercase gamma)
+N = 2975000 #people with SUDs who are unconnected
 #initial conditions
-U0 = 10000000
-R0 = 0
-C0 = 0
-times = np.arange(0,100,1) #time in days
-sol = odeint(derive, y0=[U0,R0,C0], t=times, args=(beta, z, eta, mu, v, gamma))
+C0 = 562000
+R0 = (N-C0)*beta
+U0 = N - R0 - C0
+times = np.arange(0,50,1) #time in days
+sol = odeint(derive, y0=[U0,R0,C0], t=times, args=(beta, z, eta, mu,muD, v, gamma))
 print(sol)
 U=sol.T[0]
 R=sol.T[1]
@@ -43,3 +42,4 @@ plt.ylabel('Population')
 plt.title('URC Model - Behavioural health population')
 plt.legend()
 plt.show()
+
