@@ -13,7 +13,7 @@ def derive(I, t, beta, z, eta, mu, muD, v, gamma):
     ]
 
 #parameter list
-beta = .1147 #rate referal into R
+beta = .1056 #rate referal into R
 z = 1/10 #rate of awareness
 mu = 0.005834 # natural death rate
 muD = 0.00000239 #death rate related to behavioral issues
