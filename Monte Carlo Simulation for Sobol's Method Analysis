@@ -1,0 +1,115 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import odeint
+import pandas as pd
+import statistics
+from prettytable import PrettyTable
+
+#Run the URC model and return days for U = 0
+def simulate(beta, z, v):
+        def derive(I, t, beta, z, v):
+            U = I[0]
+            R = I[1]
+            C = I[2]
+            return [
+                (-beta*U*z), #U
+                (beta*U*z) - (v*R), #R
+                (v*R), #C
+            ]
+
+    #parameter list
+        N = 2975000 #people with SUDs who are unconnected
+        #initial conditions
+        C0 = 562000
+        R0 = (N-C0)*beta
+        U0 = N - C0-R0
+        times = np.arange(0,1500,1) #time in days
+        sol = odeint(derive, y0=[U0,R0,C0], t=times, args=(beta, z, v,))
+        
+        U=sol.T[0]
+        R=sol.T[1]
+        C=sol.T[2]
+
+        
+        for i in range(len(U)):
+            #print(U[i].round())
+            if U[i].round() == 0:
+                days = times[i]
+                return days
+
+        return 0
+            
+
+#Variance of the model
+def modelVariance():
+    results = []
+    for i in range (10000):
+        #variance in the parameters
+        beta = np.random.uniform(0.0669, 0.1645) #rate referal into R
+        z = np.random.uniform(0.001, 1) # rate 0f awareness
+        v = np.random.uniform(0.0578, 0.1212) #rate of connection
+        results.append(simulate(beta, z, v))
+
+    #Calculate the variance between the collected data
+    variance = np.var(results)
+    return variance
+
+def zVariance():
+    results = []
+    for i in range (10000):
+        #variance for z
+        z = np.random.uniform(0.001,1) # rate 0f awareness
+        beta = 0.1039
+        v = 0.084
+        simulation = simulate(beta, z, v)
+        #prevents null type errors for points where U != 0 in given time frame
+        if simulation != 0:
+            results.append(simulation)
+
+    #Calculate the variance between the collected data
+    variance = np.var(results)
+    return variance
+
+def betaVariance():
+    results = []
+    for i in range (10000):
+        #variance in beta
+        z = 0.5 
+        beta = np.random.uniform(0.0669, 0.1645)
+        v = 0.084
+        simulation = simulate(beta, z, v) 
+        if simulation != 0:
+            results.append(simulation)
+     
+    variance = np.var(results)
+    return variance
+
+def vVariance():
+    results = []
+    for i in range (100):
+        #variance in v
+        z = 0.5 
+        beta = 0.1039
+        v = np.random.uniform(0.0578, 0.1212)
+        simulation = simulate(beta, z, v)
+        if simulation != 0:
+            results.append(simulation)
+
+    #Calculate the variance between the collected data
+    variance = np.var(results)
+    return variance
+
+#Model variance
+modelVariance = modelVariance()
+
+#Awareness first sobol's index
+zIndex = zVariance()/modelVariance 
+print("zIndex: " + str(zIndex))
+
+#Beta first sobol's index
+betaIndex = betaVariance()/modelVariance
+print("betaIndex: " + str(betaIndex))
+
+#Connection first sobol's index
+vIndex = vVariance()/modelVariance
+print("vIndex: " + str(vIndex))
