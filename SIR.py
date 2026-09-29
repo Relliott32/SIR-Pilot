@@ -7,19 +7,16 @@ def derive(I, t, beta, z, eta, mu, muD, v, gamma):
     R = I[1]
     C = I[2]
     return [
-        (-beta*U)-(eta*U)-(mu*U) -(muD*U)- (z*U) + (gamma), #U
-        (beta*U) - (eta*R)-(mu*R) - (muD*R) - (v*R) +(z*U), #R
+        (-beta*z*U), #U
+        (beta*z*U) - (v*R), #R
         (v*R), #C
     ]
 
 #parameter list
-beta = .1056 #rate referal into R
-z = 0.8# rate 0f awareness
-mu = 0 # natural death rate
-muD = 0#death rate related to behavioral issues
-eta = 0 #crisis rate
-v = 0.08505378151 #rate of connection
-gamma = 00000 #new cases per day
+beta = .1039 #rate referal into R
+z = 1 # rate 0f awareness
+v = 0.084 #rate of connection
+gamma = 0 #new cases per day
 # total pop in country
 
 N = 2975000 #people with SUDs who are unconnected
@@ -27,7 +24,8 @@ N = 2975000 #people with SUDs who are unconnected
 C0 = 562000
 R0 = (N-C0)*beta
 U0 = N - C0-R0
-times = np.arange(0,100,1) #time in days
+times = np.arange(0,150,1) #time in days
+
 sol = odeint(derive, y0=[U0,R0,C0], t=times, args=(beta, z, eta, mu,muD, v, gamma))
 print(sol)
 U=sol.T[0]
