@@ -4,8 +4,7 @@ from scipy.integrate import odeint
 import pandas as pd
 import statistics
 from prettytable import PrettyTable
-
-#Run the URC model and return days for U = 0
+#calculate variance for the entire model
 def simulate(beta, z, v):
         def derive(I, t, beta, z, v):
             U = I[0]
@@ -18,6 +17,8 @@ def simulate(beta, z, v):
             ]
 
     #parameter list
+
+
         N = 2975000 #people with SUDs who are unconnected
         #initial conditions
         C0 = 562000
@@ -40,31 +41,72 @@ def simulate(beta, z, v):
         return 0
             
 
-#Variance of the model
+
 def modelVariance():
+    #Model
+    #Recreate URC model for simulation. Return number of days taken for U to equal 
+
+    #Random samples
+    #Define a range for parameter. Randomly generate values
     results = []
     for i in range (10000):
-        #variance in the parameters
+        '''a = simulate(beta, z, eta, mu, muD, v, gamma)
+        if (type(a) != np.int64):
+            print(z)
+            print(type(a))
+        results.append(a)'''
         beta = np.random.uniform(0.0669, 0.1645) #rate referal into R
         z = np.random.uniform(0.001, 1) # rate 0f awareness
         v = np.random.uniform(0.0578, 0.1212) #rate of connection
         results.append(simulate(beta, z, v))
+
+
+    #Collecting results
+    # After each run, add the number of days taken for U to equal 0 to a results vector
+    '''for i in results:
+        print(type(i))'''
+    #print(results)
+    '''final = pd.DataFrame(results, columns=['Days'])
+    print(final)'''
 
     #Calculate the variance between the collected data
     variance = np.var(results)
     return variance
 
 def zVariance():
+    #Model
+    #Recreate URC model for simulation. Return number of days taken for U to equal 
+    #print(simulate(beta, z, eta, mu, muD, v, gamma))
+
+    #Random samples
+    #Define a range for parameter. Randomly generate values
     results = []
     for i in range (10000):
-        #variance for z
         z = np.random.uniform(0.001,1) # rate 0f awareness
         beta = 0.1039
         v = 0.084
-        simulation = simulate(beta, z, v)
-        #prevents null type errors for points where U != 0 in given time frame
+        '''a = simulate(beta, z, eta, mu, muD, v, gamma)
+        if (type(a) != np.int64):
+            print(z)
+            print(type(a))
+        results.append(a)'''
+        simulation = simulate(beta, z, v) 
         if simulation != 0:
             results.append(simulation)
+
+    #Collecting results
+    # After each run, add the number of days taken for U to equal 0 to a results vector
+    #debugging statement 
+    '''
+    for i in results:
+        print(type(i))
+    #print(results)
+    final = pd.DataFrame(results, columns=['Days'])
+    #print(final)
+    table = PrettyTable()
+    for i in range(len(results)):
+        table.add_row([results[i]])
+    print(table)'''
 
     #Calculate the variance between the collected data
     variance = np.var(results)
@@ -72,23 +114,22 @@ def zVariance():
 
 def betaVariance():
     results = []
-    for i in range (10000):
-        #variance in beta
-        z = 0.5 
+    for i in range (5000):
+        z = 0.5 # rate 0f awareness
         beta = np.random.uniform(0.0669, 0.1645)
         v = 0.084
         simulation = simulate(beta, z, v) 
         if simulation != 0:
             results.append(simulation)
      
+         #Calculate the variance between the collected data
     variance = np.var(results)
     return variance
 
 def vVariance():
     results = []
     for i in range (100):
-        #variance in v
-        z = 0.5 
+        z = 0.5 # rate 0f awareness
         beta = 0.1039
         v = np.random.uniform(0.0578, 0.1212)
         simulation = simulate(beta, z, v)
@@ -99,17 +140,70 @@ def vVariance():
     variance = np.var(results)
     return variance
 
-#Model variance
+def betazVariance():
+    results = []
+    for i in range (10000):
+        z = np.random.uniform(0.001,1) # rate 0f awareness
+        beta = np.random.uniform(0.0669, 0.1645)
+        v = 0.084
+        simulation = simulate(beta, z, v) 
+        if simulation != 0:
+            results.append(simulation)
+
+    #Calculate the variance between the collected data
+    variance = np.var(results)
+    return variance
+def betavVariance():
+    results = []
+    for i in range (10000):
+        z = 0.5 # rate 0f awareness
+        beta = np.random.uniform(0.0669, 0.1645)
+        v = np.random.uniform(0.0578, 0.1212)
+        simulation = simulate(beta, z, v) 
+        if simulation != 0:
+            results.append(simulation)
+
+    #Calculate the variance between the collected data
+    variance = np.var(results)
+    return variance
+
+def vzVariance():
+    results = []
+    for i in range (10000):
+        z = np.random.uniform(0.001,1) # rate 0f awareness
+        beta = 0.1039
+        v = np.random.uniform(0.0578, 0.1212)
+        simulation = simulate(beta, z, v) 
+        if simulation != 0:
+            results.append(simulation)
+
+    #Calculate the variance between the collected data
+    variance = np.var(results)
+    return variance
+
 modelVariance = modelVariance()
 
-#Awareness first sobol's index
-zIndex = zVariance()/modelVariance 
-print("zIndex: " + str(zIndex))
+#Awareness index
+#first-order variance
+z1Index = zVariance()/modelVariance 
+#variance without considering z
+z2Index = betavVariance()/modelVariance
 
-#Beta first sobol's index
-betaIndex = betaVariance()/modelVariance
-print("betaIndex: " + str(betaIndex))
 
-#Connection first sobol's index
-vIndex = vVariance()/modelVariance
-print("vIndex: " + str(vIndex))
+print("main sensitivity index for z:" + str(z1Index/modelVariance))
+print("total sensitivity index for z:" + str(1 - z2Index/modelVariance))
+print("second order sensitivity index for z:" + str((z1Index/modelVariance) - (1 - z2Index/modelVariance)))
+
+
+#Beta index
+beta1Index = betaVariance()/modelVariance
+beta2Index = vzVariance()/modelVariance
+print("main sensitivity index for beta:" + str(beta1Index/modelVariance))
+print("total sensitivity index for beta:" + str(1 - beta2Index/modelVariance))
+print("second order sensitivity index for beta:" + str((beta1Index/modelVariance) - (1 - beta2Index/modelVariance)))
+#Connection index
+v1Index = vVariance()/modelVariance
+v2Index = betazVariance()/modelVariance
+print("main sensitivity index for v:" + str(v1Index/modelVariance))
+print("total sensitivity index for v:" + str(1 - v2Index/modelVariance))
+print("second order sensitivity index for v:" + str((v1Index/modelVariance) - (1 - v2Index/modelVariance)))
