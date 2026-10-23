@@ -192,7 +192,7 @@ z2Index = betavVariance()/modelVariance
 
 print("main sensitivity index for z:" + str(z1Index/modelVariance))
 print("total sensitivity index for z:" + str(1 - z2Index/modelVariance))
-print("second order sensitivity index for z:" + str((z1Index/modelVariance) - (1 - z2Index/modelVariance)))
+print("second order sensitivity index for z:" + str((1 - z2Index/modelVariance)- (z1Index/modelVariance)))
 
 
 #Beta index
@@ -200,10 +200,10 @@ beta1Index = betaVariance()/modelVariance
 beta2Index = vzVariance()/modelVariance
 print("main sensitivity index for beta:" + str(beta1Index/modelVariance))
 print("total sensitivity index for beta:" + str(1 - beta2Index/modelVariance))
-print("second order sensitivity index for beta:" + str((beta1Index/modelVariance) - (1 - beta2Index/modelVariance)))
+print("second order sensitivity index for beta:" + str((1 - beta2Index/modelVariance) - (beta1Index/modelVariance)))
 #Connection index
 v1Index = vVariance()/modelVariance
 v2Index = betazVariance()/modelVariance
 print("main sensitivity index for v:" + str(v1Index/modelVariance))
 print("total sensitivity index for v:" + str(1 - v2Index/modelVariance))
-print("second order sensitivity index for v:" + str((v1Index/modelVariance) - (1 - v2Index/modelVariance)))
+print("second order sensitivity index for v:" + str((1 - v2Index/modelVariance) - (v1Index/modelVariance)))
