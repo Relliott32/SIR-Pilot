@@ -33,16 +33,25 @@ def urc_model(params):
     R0 = (N-C0)*beta
     U0 = N - C0-R0
 
-    times = np.arange(0,180,1) #time in days
+    times = np.arange(0,100000,1) #time in days
     sol = odeint(derive, y0=[U0,R0,C0], t=times, args=(beta, z, eta, mu,muD, v, gamma))
 
     U=sol.T[0]
     R=sol.T[1]
     C=sol.T[2]
 
-    return U[-1]  # Return the final values of U, R, and C as the output of the model
+    #print(type(U))
+    #print(U)
 
+    for i in range(len(U)):
+        if U[i].round() == 0:
+            #print(type(i))
+           return i
+    else:
+        #print("U never reaches zero within the time frame.")
+        return 100000
 
+   
 
 #Define problem
 problem = {
@@ -52,19 +61,26 @@ problem = {
 }
 
 #Sample input space
-param_values = SALib.sample.sobol.sample(problem, 2048)
+param_values = SALib.sample.sobol.sample(problem, 32768)
 
 #Evaluate model
 Y = np.array([urc_model(params) for params in param_values])
+'''
+for item in Y:
+    print(item)
+    if item is None:
+        print("None value found in Y")'''
+        
+#print(Y.mean())
 
 Si = sobol.analyze(problem, Y, calc_second_order=True, conf_level = 0.95, print_to_console=True)  # Analyze the first output (U)
 
-# Prepare data for plotting
+# 5. Prepare data for plotting
 params = problem['names']
 S1 = np.array(Si['S1'])
 ST = np.array(Si['ST'])
 
-# Plot bar chart of first-order and total-order indices
+# 6. Plot bar chart of first-order and total-order indices
 fig, ax = plt.subplots(figsize=(8,5))
 x = np.arange(len(params))
 width = 0.35
