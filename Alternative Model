@@ -1,0 +1,74 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import odeint
+import pandas as pd
+
+def func_o(omega):
+    return omega + z1;
+def func_v(v):
+    return v + z2;
+
+def derive(I, t, eta,  v, omega, z1, z2, a):
+    U = I[0]
+    R = I[1]
+    C = I[2]
+    return [
+        (-(func_o(omega) + eta)*U), #U
+        (eta*U - func_v(v)*R + a*C), #R
+        ((func_v(v))*R + (func_o(omega))*U - a*C), #C
+    ]
+
+#parameter list
+
+omega = 0.0952 #self referrals
+eta = 0.0937
+z1 = 0.15 #additional self referrals from social media new
+z2 = 0.10 #additional self referrals from social media preexisting
+v = 0.1889 #rate of connection
+a = 0.0113 #rate of service stopping
+
+# total pop in country
+
+N = 2975000 #people with SUDs who are unconnected
+#initial conditions
+C0 = 562000
+R0 = 0
+U0 = N - C0
+times = np.arange(0,180,1) #time in days
+sol = odeint(derive, y0=[U0,R0,C0], t=times, args=(eta, v,omega, z1, z2, a))
+
+U=sol.T[0]
+R=sol.T[1]
+C=sol.T[2]
+
+plt.plot(times, U, label='Unaware ')
+plt.plot(times, R, label='Referred')
+plt.plot(times, C, label='Connected')
+plt.xlabel('Time')
+plt.ylabel('Population')
+plt.title('SUD population in NWDS (Baseline w/ original rates)')
+plt.legend()
+
+# show table of results
+
+df = pd.DataFrame({'Time': times, 'Unaware': U, 'Referred': R, 'Connected': C})
+df = df.round(0).astype(int)
+print(df)
+
+# show only every 10th timepoint in the table for readability
+summary_df = df[df['Time'] % 10 == 0].reset_index(drop=True)
+fig, ax = plt.subplots(figsize=(10, 4))
+ax.axis('off')
+table = ax.table(
+    cellText=summary_df.values,
+    colLabels=summary_df.columns,
+    loc='center',
+    cellLoc='center',
+    colLoc='center',
+)
+table.auto_set_font_size(False)
+table.set_fontsize(10)
+table.scale(1, 1.4)
+#ax.set_title(f'Raw data (every 10th day)', pad=20)
+fig.tight_layout()
+plt.show()
