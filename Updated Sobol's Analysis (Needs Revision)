@@ -6,35 +6,30 @@ from SALib.analyze import sobol
 import matplotlib.pyplot as plt
 import SALib
 import pandas as pd
+def func_o(omega, z1):
+    return omega + z1;
 
-def derive(I, t, beta, z, eta, mu, muD, v, gamma):
+def func_v(v, z2):
+    return v + z2;
+
+def derive(I, t, omega, v, eta, z1, z2, a):
     U = I[0]
     R = I[1]
     C = I[2]
     return [
-        (-beta*z*U), #U
-        (beta*z*U) - (v*R), #R
-        (v*R), #C
+        (-(func_o(omega, z1) + eta)*U), #U
+        (eta*U - func_v(v, z2)*R + a*C), #R
+        ((func_v(v, z2))*R + (func_o(omega, z1))*U - a*C), #C
     ]
-beta = .1039 #rate referal into R
-z = 0.83 # rate 0f awareness
-mu = 0 # natural death rate
-muD = 0#death rate related to behavioral issues
-eta = 0 #crisis rate
-v = 0.084 #rate of connection
-gamma = 0 #new cases per day
-# total pop in country
 
 def urc_model(params):
-    beta, z, v = params
-    N = 2975000 #people with SUDs who are unconnected
+    omega, v, eta, z1, z2, a, C0, U0 = params
+    R0 = 0
+    N = U0 + R0 + C0  #people with SUDs who are unconnected
     #initial conditions
-    C0 = 562000
-    R0 = (N-C0)*beta
-    U0 = N - C0-R0
 
-    times = np.arange(0,100000,1) #time in days
-    sol = odeint(derive, y0=[U0,R0,C0], t=times, args=(beta, z, eta, mu,muD, v, gamma))
+    times = np.arange(0,1200,1) #time in days
+    sol = odeint(derive, y0=[U0,R0,C0], t=times, args=(omega, v, eta, z1, z2, a))
 
     U=sol.T[0]
     R=sol.T[1]
@@ -43,28 +38,33 @@ def urc_model(params):
     #print(type(U))
     #print(U)
 
-    for i in range(len(U)):
-        if U[i].round() == 0:
+    for i in range(len(C)):
+        if C[i].round() >= N*0.8:
             #print(type(i))
-           return i
+            #print(i)
+            return i
     else:
-        #print("U never reaches zero within the time frame.")
-        return 100000
+        print("C never reaches the threshold within the time frame.")
+        return 5000
+
+
+#print(urc_model([omega, v, eta, z1, z2, a]))
 
    
 
 #Define problem
 problem = {
-    'num_vars': 3,
-    'names': ['beta', 'z', 'v'],
-    'bounds': [[0.0669, 0.1645], [0.001, 1], [0.0579, 0.1212]]
+    'num_vars': 8,
+    'names': ['omega', 'v', 'eta', 'z1', 'z2', 'a', 'C0','U0'],
+    'bounds': [[0, 0.1079], [0, 0.1157], [0, 0.1157], [0, 0.1], [0, 0.1], [0, 0.1009], [320700, 803300], [2171700, 2654300]]
 }
 
 #Sample input space
-param_values = SALib.sample.sobol.sample(problem, 32768)
+param_values = SALib.sample.sobol.sample(problem, (2*32768), calc_second_order=False)
 
 #Evaluate model
 Y = np.array([urc_model(params) for params in param_values])
+
 '''
 for item in Y:
     print(item)
@@ -73,7 +73,8 @@ for item in Y:
         
 #print(Y.mean())
 
-Si = sobol.analyze(problem, Y, calc_second_order=True, conf_level = 0.95, print_to_console=True)  # Analyze the first output (U)
+Si = sobol.analyze(problem, Y, calc_second_order=False, num_resamples = 500, conf_level = 0.99, print_to_console=True)  # Analyze the first output (U)
+
 
 # 5. Prepare data for plotting
 params = problem['names']
