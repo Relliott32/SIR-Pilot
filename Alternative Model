@@ -3,19 +3,70 @@ import matplotlib.pyplot as plt
 from scipy.integrate import odeint
 import pandas as pd
 
-def func_o(omega):
+def func_o(omega, z1):
     return omega + z1;
-def func_v(v):
+def func_v(v, z2):
     return v + z2;
+
+#returns the number of days for U <= 20% of U0
+def U_threshold_time(params):
+    omega, v, eta, z1, z2, a, N, C0 = params
+    R0 = 0
+    U0 = N - C0
+
+    times = np.arange(0,1000,1) #time in days
+    sol = odeint(derive, y0=[U0,R0,C0], t=times, args=(eta, v,omega, z1, z2, a))
+
+    U=sol.T[0]
+    R=sol.T[1]
+    C=sol.T[2]
+
+    for i in range(len(U)):
+        if U[i].round() <= U0*0.2:
+            return i
+
+#returns the number of days for C >= 60% of N 
+def C_threshold_time_60(params):
+    omega, v, eta, z1, z2, a, N, C0 = params
+    #initial conditions
+    R0 = 0
+    U0 = N - C0
+
+    times = np.arange(0,1000,1) #time in days
+    sol = odeint(derive, y0=[U0,R0,C0], t=times, args=(eta, v,omega, z1, z2, a))
+
+    U=sol.T[0]
+    R=sol.T[1]
+    C=sol.T[2]
+
+    for i in range(len(C)):
+        if C[i].round() >= N*0.6:
+            return i
+
+# returns the number of days for C >= 80% of N
+def C_threshold_time_80(params):
+    omega, v, eta, z1, z2, a, N, C0 = params
+    #initial conditions
+    R0 = 0
+    U0 = N - C0
+
+    times = np.arange(0,1000,1) #time in days
+    sol = odeint(derive, y0=[U0,R0,C0], t=times, args=(eta, v,omega, z1, z2, a))
+
+    C=sol.T[2]
+
+    for i in range(len(C)):
+        if C[i].round() >= N*0.8:
+            return i
 
 def derive(I, t, eta,  v, omega, z1, z2, a):
     U = I[0]
     R = I[1]
     C = I[2]
     return [
-        (-(func_o(omega) + eta)*U), #U
-        (eta*U - func_v(v)*R + a*C), #R
-        ((func_v(v))*R + (func_o(omega))*U - a*C), #C
+        (-(func_o(omega, z1) + eta)*U), #U
+        (eta*U - func_v(v, z2)*R + a*C), #R
+        ((func_v(v, z2))*R + (func_o(omega, z1))*U - a*C), #C
     ]
 
 #parameter list
@@ -23,8 +74,8 @@ def derive(I, t, eta,  v, omega, z1, z2, a):
 omega = 0.0079 #self referrals
 v = 0.0157 #rate of connection
 eta = v
-z1 = 0 #additional self referrals from social media new
-z2 = 0 #additional self referrals from social media preexisting
+z1 = 0.1 #additional self referrals from social media new
+z2 = 0.1 #additional self referrals from social media preexisting
 a = 0.0009 #rate of service stopping
 
 # total pop in country
@@ -34,9 +85,12 @@ N = 2975000 #people with SUDs who are unconnected
 C0 = 562000
 R0 = 0
 U0 = N - C0
-times = np.arange(0,360,1) #time in days
+times = np.arange(0,150,1) #time in months
 sol = odeint(derive, y0=[U0,R0,C0], t=times, args=(eta, v,omega, z1, z2, a))
 
+
+#Print graph of U, R, and C over time
+'''
 U=sol.T[0]
 R=sol.T[1]
 C=sol.T[2]
@@ -44,18 +98,48 @@ C=sol.T[2]
 plt.plot(times, U, label='Unaware ')
 plt.plot(times, R, label='Referred')
 plt.plot(times, C, label='Connected')
+
 plt.xlabel('Time (Months)')
 plt.ylabel('Population')
 plt.title('SUD population in NWDS')
 plt.legend()
+plt.show()'''
 
-# show table of results
+#Threshold times for U and C
+'''
+print("Threshold time for U:", U_threshold_time((omega, v, eta, z1, z2, a, N, C0)))
+print("Threshold time for C (60%):", C_threshold_time_60((omega, v, eta, z1, z2, a, N, C0)))
+print("Threshold time for C (80%):", C_threshold_time_80((omega, v, eta, z1, z2, a, N, C0)))
+'''
+#For compartment comparison
+'''
+sol = odeint(derive, y0=[U0,R0,C0], t=times, args=(eta, v,omega, 0, 0, a))
+plt.plot(times, sol.T[2], label='Connected (z1 = 0, z2 = 0)')
 
+
+sol = odeint(derive, y0=[U0,R0,C0], t=times, args=(eta, v,omega,0.1, 0, a))
+plt.plot(times, sol.T[2], label='Connected (z1 = 0.1, z2 = 0)')
+
+
+sol = odeint(derive, y0=[U0,R0,C0], t=times, args=(eta, v,omega, 0, 0.1, a))
+plt.plot(times, sol.T[2], label='Connected (z1 = 0, z2 = 0.1)')
+
+sol = odeint(derive, y0=[U0,R0,C0], t=times, args=(eta, v,omega, 0.1, 0.1, a))
+plt.plot(times, sol.T[2], label='Connected (z1 = 0.1, z2 = 0.1)')
+
+plt.xlabel('Time (Months)')
+plt.ylabel('Population')
+plt.title('SUD population in NWDS')
+plt.legend()
+plt.show()'''
+# show table of results in the terminal
+'''
 df = pd.DataFrame({'Time': times, 'Unaware': U, 'Referred': R, 'Connected': C})
 df = df.round(0).astype(int)
-print(df)
+print(df)'''
 
 # show only every 10th timepoint in the table for readability
+'''
 summary_df = df[df['Time'] % 10 == 0].reset_index(drop=True)
 fig, ax = plt.subplots(figsize=(10, 4))
 ax.axis('off')
@@ -72,5 +156,8 @@ table.scale(1, 1.4)
 #ax.set_title(f'Raw data (every 10th day)', pad=20)
 fig.tight_layout()
 plt.show()
+'''
+
+
 
 
